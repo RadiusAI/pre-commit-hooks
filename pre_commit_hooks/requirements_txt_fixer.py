@@ -41,6 +41,12 @@ class Requirement:
     def has_version(self) -> bool:
         return self.extract_version() is not None
 
+    def is_include(self) -> bool:
+        """Ignore version requirement if the line is -r <some_req_file.txt>"""
+        if not self.value:
+            return False
+        return self.value.decode().startswith('-r')
+
     def extract_version(self) -> str | None:
         if not self.value:
             return None
@@ -133,7 +139,9 @@ def fix_requirements(f: IO[bytes], require_version: bool = False) -> int:
         after.extend(requirement.comments)
         assert requirement.value, requirement.value
         after.append(requirement.value)
-        if require_version and not requirement.has_version():
+        if require_version and \
+                not requirement.is_include() and \
+                not requirement.has_version():
             missing_versions.append(requirement.value.decode().strip())
     after.extend(rest)
 
